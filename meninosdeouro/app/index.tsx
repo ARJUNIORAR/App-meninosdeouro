@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const router = useRouter(); // Adicione esta linha
 
   const handleLogin = () => {
     console.log('Email:', email);
     console.log('Password:', password);
+    router.push('/home'); // Navega para a página home.js
   
   };
 
