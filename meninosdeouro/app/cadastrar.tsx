@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image,StyleSheet } from 'react-native';
 import { TextInput, Button, RadioButton, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -29,7 +29,7 @@ export default function CadastroScreen() {
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      setImage(result.assets[0].uri);             
     }
   };
 
@@ -62,7 +62,7 @@ export default function CadastroScreen() {
 
       {/* Campos do formulário */}
       <TextInput
-        label="Nome Completo *"
+        label="Nome Completo"
         value={form.nomeCompleto}
         onChangeText={(text) => setForm({...form, nomeCompleto: text})}
         mode="outlined"
@@ -70,7 +70,7 @@ export default function CadastroScreen() {
       />
 
       <TextInput
-        label="Data de Nascimento *"
+        label="Data de Nascimento"
         value={form.dataNascimento}
         onChangeText={(text) => setForm({...form, dataNascimento: text})}
         mode="outlined"
@@ -128,7 +128,7 @@ export default function CadastroScreen() {
       />
 
       <TextInput
-        label="Cidade *"
+        label="Cidade"
         value={form.cidade}
         onChangeText={(text) => setForm({...form, cidade: text})}
         mode="outlined"
@@ -136,7 +136,7 @@ export default function CadastroScreen() {
       />
 
       <TextInput
-        label="CEP *"
+        label="CEP"
         value={form.cep}
         onChangeText={(text) => setForm({...form, cep: text})}
         mode="outlined"
@@ -165,7 +165,7 @@ export default function CadastroScreen() {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
@@ -224,4 +224,4 @@ const styles = {
     color: '',
     fontWeight: 'bold',
   },
-};
+});
