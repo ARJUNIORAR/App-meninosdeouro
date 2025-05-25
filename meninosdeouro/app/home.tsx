@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { TextInput, Checkbox } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -16,7 +16,19 @@ export default function Home() {
     { id: '1', nome: 'João Silva', selecionado: false },
     { id: '2', nome: 'Maria Souza', selecionado: false },
     { id: '3', nome: 'Carlos Oliveira', selecionado: false },
+    { id: '4', nome: 'Juior araujo', selecionado: false },
+    { id: '5', nome: 'João Mario', selecionado: false },
+    { id: '6', nome: 'Maria hanna', selecionado: false },
+    { id: '7', nome: 'Carlos Eduardo', selecionado: false },
+    { id: '8', nome: 'James amarante', selecionado: false },
   ]);
+
+  // Corrigido: alunosFiltrados agora é calculado com useMemo
+  const alunosFiltrados = useMemo(() => {
+    return alunos.filter(aluno =>
+      aluno.nome.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }, [alunos, searchText]);
 
   const toggleSelecionado = (id: string) => {
     setAlunos(alunos.map(aluno => 
@@ -30,13 +42,12 @@ export default function Home() {
       alert('Todos os alunos estão marcados como não sorteados!');
       return;
     }
-    const sorteado = alunosParaSortear[Math.floor(Math.random() * alunosParaSortear.length)];
-    alert(`Aluno sorteado: ${sorteado.nome}`);
+    
+    router.push({
+      pathname: '/timesSorteados',
+      params: { alunosSelecionados: JSON.stringify(alunosParaSortear) }
+    });
   };
-
-  const alunosFiltrados = alunos.filter(aluno =>
-    aluno.nome.toLowerCase().includes(searchText.toLowerCase())
-  );
 
   return (
     <View style={styles.container}>
@@ -72,7 +83,7 @@ export default function Home() {
         left={<TextInput.Icon icon="magnify" />}
       />
 
-      {/* Lista de alunos */}
+      {/* Lista de alunos - Corrigido: usando alunosFiltrados corretamente */}
       <ScrollView style={styles.listContainer}>
         {alunosFiltrados.map(aluno => (
           <View key={aluno.id} style={styles.alunoItem}>
