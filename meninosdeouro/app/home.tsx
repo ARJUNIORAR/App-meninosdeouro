@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { TextInput, Checkbox } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import api from './api/api';
 
 type Aluno = {
   id: string;
@@ -12,16 +13,19 @@ type Aluno = {
 export default function Home() {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
-  const [alunos, setAlunos] = useState<Aluno[]>([
-    { id: '1', nome: 'João Silva', selecionado: false },
-    { id: '2', nome: 'Maria Souza', selecionado: false },
-    { id: '3', nome: 'Carlos Oliveira', selecionado: false },
-    { id: '4', nome: 'Juior araujo', selecionado: false },
-    { id: '5', nome: 'João Mario', selecionado: false },
-    { id: '6', nome: 'Maria hanna', selecionado: false },
-    { id: '7', nome: 'Carlos Eduardo', selecionado: false },
-    { id: '8', nome: 'James amarante', selecionado: false },
-  ]);
+  const [alunos, setAlunos] = useState<Aluno[]>([]);
+
+
+  useEffect(()=>{
+    api.get('/alunos/').then(resp=>{
+      setAlunos(resp.data.map((aluno: any)=>{
+        return {id: aluno.id, nome: aluno.nome, selecionado: false}
+      }))
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [0])
+
+
 
   // Corrigido: alunosFiltrados agora é calculado com useMemo
   const alunosFiltrados = useMemo(() => {
@@ -86,7 +90,7 @@ export default function Home() {
       {/* Lista de alunos - Corrigido: usando alunosFiltrados corretamente */}
       <ScrollView style={styles.listContainer}>
         {alunosFiltrados.map(aluno => (
-          <View key={aluno.id} style={styles.alunoItem}>
+          <View key={aluno.id} style={styles.alunoItem}> {/*Tentar adicionar foto*/}
             <Checkbox
               status={aluno.selecionado ? 'checked' : 'unchecked'}
               onPress={() => toggleSelecionado(aluno.id)}

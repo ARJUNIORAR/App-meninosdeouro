@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity,Alert } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import api from './api/api';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -12,7 +13,11 @@ const LoginScreen = () => {
   const handleLogin = () => {
     console.log('Email:', email);
     console.log('Password:', password);
-    router.push('/home'); // Navega para a página home.js
+    api.post('/professor/login',{email,senha:password}).then(res=>{
+      router.push('/home');
+    }).catch(erro=>{
+      Alert.alert('Erro de dados no seu acesso, verifique seu login ou senha!')
+    })
   
   };
 
