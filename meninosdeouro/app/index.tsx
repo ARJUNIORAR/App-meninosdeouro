@@ -73,14 +73,14 @@ const LoginScreen = () => {
       
       {/* Link para Esqueci a Senha */}
       <TouchableOpacity style={styles.forgotPassword}>
-        <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+        <Text style={styles.forgotPasswordText}>{/*Como para inserir esqueci a senha*/}</Text>
       </TouchableOpacity>
       
       {/* Link para Cadastro */}
       <View style={styles.signupContainer}>
-        <Text style={styles.signupText}>Não tem uma conta?</Text>
+        <Text style={styles.signupText}>{/*Não tem uma conta?*/}</Text>
         <TouchableOpacity>
-          <Text style={[styles.signupText, styles.signupLink]}> Cadastre-se</Text>
+          <Text style={[styles.signupText, styles.signupLink]}>{/*Cadastre-se*/}</Text>
         </TouchableOpacity>
       </View>
     </View>
