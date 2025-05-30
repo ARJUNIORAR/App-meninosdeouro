@@ -8,7 +8,7 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
-  const router = useRouter(); // Adicione esta linha
+  const router = useRouter();
 
   const handleLogin = () => {
     console.log('Email:', email);
