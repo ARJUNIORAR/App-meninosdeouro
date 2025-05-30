@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image,StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image,StyleSheet, Alert } from 'react-native';
 import { TextInput, Button, RadioButton, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import api from './api/api';
 
 export default function CadastroScreen() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function CadastroScreen() {
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
@@ -34,17 +35,43 @@ export default function CadastroScreen() {
   };
 
   const handleSubmit = () => {
+    const formulario = new FormData()
+    console.log(image)
     // Validação dos campos obrigatórios
     if (!form.nomeCompleto || !form.dataNascimento || !form.genero || 
         !form.cidade || !form.cep || !form.nomeResponsavel) {
       alert('Por favor, preencha todos os campos obrigatórios!');
       return;
     }
+    formulario.append('nome', form.nomeCompleto)
+    formulario.append('dt_nasc', form.dataNascimento)
+    formulario.append('genero', form.genero)
+    formulario.append('cidade', form.cidade)
+    formulario.append('cep', form.cep)
+    formulario.append('nome_resp', form.nomeResponsavel)
+    formulario.append('cont_resp', form.contatoResponsavel)
+    formulario.append('rg', form.rg)
+    formulario.append('cpf', form.cpf)
     
-    //submissão para seu banco de dados
-    console.log('Dados do aluno:', { image, ...form });
-    alert('Cadastro realizado com sucesso!');
-    router.back();
+
+    if (image) formulario.append('foto',{
+      uri:image,
+      type: `image/${image.split('/')[image.split('/').length-1].split('.')[1]}`,
+      name:`${image.split('/')[image.split('/').length-1]}`
+    }as any)
+    console.log(formulario)
+
+    api.post('/aluno/', formulario, {
+      headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    }).then(resp=>{
+      Alert.alert('Cadastro realizado com sucesso!')
+      router.back();
+    }).catch(()=>{
+      Alert.alert('Erro ao cadastrar aluno')
+    })
+
   };
 
   return (
@@ -98,7 +125,7 @@ export default function CadastroScreen() {
       />
 
       {/* Gênero */}
-      <Text style={styles.sectionTitle}>Gênero *</Text>
+      <Text style={styles.sectionTitle}>Gênero</Text>
       <RadioButton.Group
         onValueChange={(value) => setForm({...form, genero: value})}
         value={form.genero}

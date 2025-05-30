@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity,Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import api from './api/api';
@@ -13,12 +13,12 @@ const LoginScreen = () => {
   const handleLogin = () => {
     console.log('Email:', email);
     console.log('Password:', password);
-    api.post('/professor/login',{email,senha:password}).then(res=>{
+    api.post('/professor/login', { email, senha: password }).then(res => {
       router.push('/home');
-    }).catch(erro=>{
+    }).catch(erro => {
       Alert.alert('Erro de dados no seu acesso, verifique seu login ou senha!')
     })
-  
+
   };
 
   return (
@@ -29,9 +29,9 @@ const LoginScreen = () => {
         style={styles.logo}
         resizeMode="contain"
       />
-      
+
       <Text style={styles.title}>Bem-vindo</Text>
-      
+
       {/* Campo de Email */}
       <TextInput
         label="Email"
@@ -43,7 +43,7 @@ const LoginScreen = () => {
         keyboardType="email-address"
         autoCapitalize="none"
       />
-      
+
       {/* Campo de Senha */}
       <TextInput
         label="Senha"
@@ -53,34 +53,34 @@ const LoginScreen = () => {
         style={styles.input}
         left={<TextInput.Icon icon="lock" />}
         right={
-          <TextInput.Icon 
-            icon={secureTextEntry ? "eye-off" : "eye"} 
+          <TextInput.Icon
+            icon={secureTextEntry ? "eye-off" : "eye"}
             onPress={() => setSecureTextEntry(!secureTextEntry)}
           />
         }
         secureTextEntry={secureTextEntry}
       />
-      
+
       {/* Botão de Login */}
-      <Button 
-        mode="contained" 
+      <Button
+        mode="contained"
         onPress={handleLogin}
         style={styles.button}
         labelStyle={styles.buttonLabel}
       >
         Entrar
       </Button>
-      
+
       {/* Link para Esqueci a Senha */}
       <TouchableOpacity style={styles.forgotPassword}>
-        <Text style={styles.forgotPasswordText}>{/*Como para inserir esqueci a senha*/}</Text>
+        <Text style={styles.forgotPasswordText}>Como para inserir esqueci a senha</Text>
       </TouchableOpacity>
-      
+
       {/* Link para Cadastro */}
       <View style={styles.signupContainer}>
-        <Text style={styles.signupText}>{/*Não tem uma conta?*/}</Text>
+        <Text style={styles.signupText}>Não tem uma conta?</Text>
         <TouchableOpacity>
-          <Text style={[styles.signupText, styles.signupLink]}>{/*Cadastre-se*/}</Text>
+          <Text style={[styles.signupText, styles.signupLink]}>Cadastre-se</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -95,12 +95,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
   logo: {
-  width: 150,
-  height: 150,
-  alignSelf: 'center',
-  marginBottom: 0,
-  borderRadius: 40, // Metade da largura/altura para ficar perfeito
-},
+    width: 150,
+    height: 150,
+    alignSelf: 'center',
+    marginBottom: 0,
+    borderRadius: 40, // Metade da largura/altura para ficar perfeito
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
