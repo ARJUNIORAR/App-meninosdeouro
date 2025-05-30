@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { TextInput, Checkbox } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import api from './api/api';
@@ -7,6 +7,7 @@ import api from './api/api';
 type Aluno = {
   id: string;
   nome: string;
+  foto?: string; // Adicionando campo foto opcional
   selecionado: boolean;
 };
 
@@ -15,19 +16,19 @@ export default function Home() {
   const [searchText, setSearchText] = useState('');
   const [alunos, setAlunos] = useState<Aluno[]>([]);
 
+  useEffect(() => {
+  api.get('/alunos/').then(resp => {
+    setAlunos(resp.data.map((aluno: any) => ({
+      id: aluno.id, 
+      nome: aluno.nome, 
+      foto: aluno.foto,
+      selecionado: false 
+    })));
+  }).catch(error => {
+    console.error('Erro ao carregar alunos:', error);
+  });
+}, []); // Removi a dependência [0] que não faz sentido e pode causar problemas segundo o documento.
 
-  useEffect(()=>{
-    api.get('/alunos/').then(resp=>{
-      setAlunos(resp.data.map((aluno: any)=>{
-        return {id: aluno.id, nome: aluno.nome, selecionado: false}
-      }))
-    })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [0])
-
-
-
-  // Corrigido: alunosFiltrados agora é calculado com useMemo
   const alunosFiltrados = useMemo(() => {
     return alunos.filter(aluno =>
       aluno.nome.toLowerCase().includes(searchText.toLowerCase())
@@ -39,6 +40,16 @@ export default function Home() {
       aluno.id === id ? { ...aluno, selecionado: !aluno.selecionado } : aluno
     ));
   };
+
+  const handleEditarAluno = (id: string) => {
+  router.push({
+    pathname: '/cadastrar',  // Usando a mesma página de cadastro
+    params: { 
+      alunoId: id,
+      modoEdicao: 'true' 
+    }
+  });
+};
 
   const handleSortear = () => {
     const alunosParaSortear = alunos.filter(aluno => !aluno.selecionado);
@@ -87,16 +98,28 @@ export default function Home() {
         left={<TextInput.Icon icon="magnify" />}
       />
 
-      {/* Lista de alunos - Corrigido: usando alunosFiltrados corretamente */}
+      {/* Lista de alunos */}
       <ScrollView style={styles.listContainer}>
         {alunosFiltrados.map(aluno => (
-          <View key={aluno.id} style={styles.alunoItem}> {/*Tentar adicionar foto*/}
+          <View key={aluno.id} style={styles.alunoItem}>
+            {aluno.foto && (
+              <Image 
+                source={{ uri: aluno.foto }} 
+                style={styles.alunoFoto}
+              />
+            )}
             <Checkbox
               status={aluno.selecionado ? 'checked' : 'unchecked'}
               onPress={() => toggleSelecionado(aluno.id)}
               color="#DB9723"
             />
             <Text style={styles.alunoNome}>{aluno.nome}</Text>
+            <TouchableOpacity 
+              style={styles.editarButton}
+              onPress={() => handleEditarAluno(aluno.id)}
+            >
+              <Text style={styles.editarButtonText}>Editar</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
@@ -153,9 +176,26 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
   },
+  alunoFoto: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
   alunoNome: {
     color: '#fff',
     marginLeft: 10,
     fontSize: 16,
+    flex: 1,
+  },
+  editarButton: {
+    backgroundColor: '#DB9723',
+    padding: 8,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  editarButtonText: {
+    color: '#000',
+    fontSize: 12,
   },
 });
