@@ -18,6 +18,7 @@ export default function Home() {
 
   useEffect(() => {
   api.get('/alunos/').then(resp => {
+    console.log(resp.data)
     setAlunos(resp.data.map((aluno: any) => ({
       id: aluno.id, 
       nome: aluno.nome, 
@@ -27,7 +28,8 @@ export default function Home() {
   }).catch(error => {
     console.error('Erro ao carregar alunos:', error);
   });
-}, []); // Removi a dependência [0] que não faz sentido e pode causar problemas segundo o documento.
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [0]); // Removi a dependência [0] que não faz sentido e pode causar problemas segundo o documento.
 
   const alunosFiltrados = useMemo(() => {
     return alunos.filter(aluno =>
@@ -46,7 +48,7 @@ export default function Home() {
     pathname: '/cadastrar',  // Usando a mesma página de cadastro
     params: { 
       alunoId: id,
-      modoEdicao: 'true' 
+      modoEdicao:true 
     }
   });
 };

@@ -1,258 +1,295 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Image } from 'react-native';
-import { TextInput, Button } from 'react-native-paper';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { View, ScrollView, TouchableOpacity, Image,StyleSheet, Alert } from 'react-native';
+import { TextInput, Button, RadioButton, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import api from './api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type AlunoParams = {
-  alunoId?: string;
-  modoEdicao?: string;
-};
 
-export default function CadastrarAluno() {
+export default function CadastroScreen() {
+  const [edition,setEdition] = useState(false);
   const router = useRouter();
-  const params = useLocalSearchParams<AlunoParams>();
-  const [nome, setNome] = useState('');
-  const [foto, setFoto] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isEdicao, setIsEdicao] = useState(false);
-  const [alunoId, setAlunoId] = useState<string | null>(null);
+  const localParams = useLocalSearchParams()
+  const [image, setImage] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    nomeCompleto: '',
+    dataNascimento: '',
+    cpf: '',
+    rg: '',
+    genero: '',
+    contatoResponsavel: '',
+    endereco: '',
+    cidade: '',
+    cep: '',
+    nomeResponsavel: ''
+  });
 
-  // Carrega os dados do aluno se for edição
-  useEffect(() => {
-    if (params.alunoId && params.modoEdicao === 'true') {
-      setIsEdicao(true);
-      setAlunoId(params.alunoId);
-      carregarAluno(params.alunoId);
+  useEffect(()=>{
+    if (localParams.modoEdicao) {
+      setEdition(localParams.modoEdicao)
+      api.get(`/aluno/${localParams.alunoId}`).then(resp=>{
+        console.log(resp.data)
+        setForm(resp.data)
+      })
     }
-  }, [params]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[0])
 
-  const carregarAluno = async (id: string) => {
-    try {
-      const response = await api.get(`/alunos/${id}`);
-      setNome(response.data.nome);
-      setFoto(response.data.foto || null);
-    } catch (error) {
-      console.error('Erro ao carregar aluno:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os dados do aluno');
-    }
-  };
-
-  const selecionarFoto = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissão necessária', 'Precisamos acessar sua galeria para selecionar uma foto');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
+      aspect: [4, 3],
+      quality: 1,
     });
 
     if (!result.canceled) {
-      const manipResult = await manipulateAsync(
-        result.assets[0].uri,
-        [{ resize: { width: 500 } }],
-        { compress: 0.7, format: SaveFormat.JPEG }
-      );
-      setFoto(manipResult.uri);
+      setImage(result.assets[0].uri);             
     }
   };
 
-  const tirarFoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissão necessária', 'Precisamos acessar sua câmera para tirar uma foto');
+  const maskCpf = (value: string): string=> {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+    .replace(/(-\d{2})\d+?$/, '$1');
+}
+
+const maskPhone = (value: string): string=>{
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d{1,2})/, '$1-$2')
+    .replace(/(-\d{4})\d+?$/, '$1');
+}
+
+const maskDate = (value: string): string=> {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{2})(\d)/, '$1/$2')
+    .replace(/(\d{2})(\d)/, '$1/$2')
+    .replace(/(\/\d{4})\d+?$/, '$1');
+}
+
+  const handleSubmit = async() => {
+    const formulario = new FormData()
+    console.log(image)
+    // Validação dos campos obrigatórios
+    if (!form.nomeCompleto || !form.dataNascimento || !form.genero || 
+        !form.cidade || !form.cep || !form.nomeResponsavel) {
+      alert('Por favor, preencha todos os campos obrigatórios!');
       return;
     }
+    formulario.append('nome', form.nomeCompleto)
+    formulario.append('dt_nasc', form.dataNascimento)
+    formulario.append('genero', form.genero)
+    formulario.append('cidade', form.cidade)
+    formulario.append('cep', form.cep)
+    formulario.append('nome_resp', form.nomeResponsavel)
+    formulario.append('cont_resp', form.contatoResponsavel)
+    formulario.append('rg', form.rg)
+    formulario.append('cpf', form.cpf)
+    formulario.append('professorEmail',`${await AsyncStorage.getItem('email')}`)
+    
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
-    });
+    if (image) formulario.append('foto',{
+      uri:image,
+      type: `image/${image.split('/')[image.split('/').length-1].split('.')[1]}`,
+      name:`${image.split('/')[image.split('/').length-1]}`
+    }as any)
+    console.log(formulario)
 
-    if (!result.canceled) {
-      const manipResult = await manipulateAsync(
-        result.assets[0].uri,
-        [{ resize: { width: 500 } }],
-        { compress: 0.7, format: SaveFormat.JPEG }
-      );
-      setFoto(manipResult.uri);
-    }
-  };
-
-  const salvarAluno = async () => {
-    if (!nome.trim()) {
-      Alert.alert('Erro', 'Por favor, informe o nome do aluno');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('nome', nome);
-
-      if (foto && !foto.startsWith('http')) {
-        // @ts-ignore
-        formData.append('foto', {
-          uri: foto,
-          name: 'foto.jpg',
-          type: 'image/jpeg',
-        });
-      }
-
-      if (isEdicao && alunoId) {
-        await api.put(`/alunos/${alunoId}`, formData, {
-          headers: {
+    api.post('/aluno/', formulario, {
+      headers: {
             'Content-Type': 'multipart/form-data',
-          },
-        });
-        Alert.alert('Sucesso', 'Aluno atualizado com sucesso!');
-      } else {
-        await api.post('/alunos', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        Alert.alert('Sucesso', 'Aluno cadastrado com sucesso!');
-      }
-
+        },
+    }).then(resp=>{
+      Alert.alert('Cadastro realizado com sucesso!')
       router.back();
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      Alert.alert('Erro', `Não foi possível ${isEdicao ? 'atualizar' : 'cadastrar'} o aluno`);
-    } finally {
-      setLoading(false);
-    }
+    }).catch(()=>{
+      Alert.alert('Erro ao cadastrar aluno')
+    })
+
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>
-          {isEdicao ? 'Editar Aluno' : 'Cadastrar Novo Aluno'}
-        </Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Cadastro de Aluno</Text>
 
-        <TextInput
-          label="Nome do Aluno"
-          value={nome}
-          onChangeText={setNome}
-          mode="outlined"
-          style={styles.input}
-        />
+      {/* Upload de Foto */}
+      <TouchableOpacity style={styles.imageContainer} onPress={pickImage}>
+        {image ? (
+          <Image source={{ uri: image }} style={styles.image} />
+        ) : (
+          <Text style={styles.imagePlaceholder}>+ Adicionar Foto</Text>
+        )}
+      </TouchableOpacity>
 
-        <View style={styles.fotoContainer}>
-          {foto && (
-            <View style={styles.fotoPreviewContainer}>
-              <Text style={styles.fotoLabel}>Foto do aluno:</Text>
-              <Image source={{ uri: foto }} style={styles.fotoPreview} />
-            </View>
-          )}
+      {/* Campos do formulário */}
+      <TextInput
+        label="Nome Completo"
+        value={form.nomeCompleto}
+        onChangeText={(text) => setForm({...form, nomeCompleto: text})}
+        mode="outlined"
+        style={styles.input}
+      />
 
-          <View style={styles.fotoButtons}>
-            <Button
-              mode="contained"
-              onPress={selecionarFoto}
-              style={styles.fotoButton}
-              icon="image"
-            >
-              {foto ? 'Alterar' : 'Galeria'}
-            </Button>
+      <TextInput
+        label="Data de Nascimento"
+        value={form.dataNascimento}
+        onChangeText={(text) => setForm({...form, dataNascimento: maskDate (text)})}
+        mode="outlined"
+        style={styles.input}
+        placeholder="DD/MM/AAAA"
+        keyboardType="numeric"
+      />
 
-            <Button
-              mode="contained"
-              onPress={tirarFoto}
-              style={styles.fotoButton}
-              icon="camera"
-            >
-              Câmera
-            </Button>
-          </View>
+      <TextInput
+        label="CPF"
+        value={form.cpf}
+        onChangeText={(text) => setForm({...form, cpf: maskCpf(text)})}
+        mode="outlined"
+        style={styles.input}
+        keyboardType="numeric"
+      />
+
+      <TextInput
+        label="RG"
+        value={form.rg}
+        onChangeText={(text) => setForm({...form, rg: text})}
+        mode="outlined"
+        style={styles.input}
+        keyboardType="numeric"
+      />
+
+      {/* Gênero */}
+      <Text style={styles.sectionTitle}>Gênero</Text>
+      <RadioButton.Group
+        onValueChange={(value) => setForm({...form, genero: value})}
+        value={form.genero}
+      >
+        <View style={styles.radioContainer}>
+          <RadioButton.Item label="Masculino" value="masculino" color="#D99D36" />
+          <RadioButton.Item label="Feminino" value="feminino" color="#D99D36" />
+          <RadioButton.Item label="Outro" value="outro" color="#D99D36" />
         </View>
+      </RadioButton.Group>
 
-        <Button
-          mode="contained"
-          onPress={salvarAluno}
-          style={styles.submitButton}
-          loading={loading}
-          disabled={loading}
-        >
-          {isEdicao ? 'Atualizar' : 'Cadastrar'}
-        </Button>
+      <TextInput
+        label="Contato do Responsável"
+        value={form.contatoResponsavel}
+        onChangeText={(text) => setForm({...form, contatoResponsavel: maskPhone (text)})}
+        mode="outlined"
+        style={styles.input}
+        keyboardType="phone-pad"
+      />
 
-        <Button
-          mode="outlined"
-          onPress={() => router.back()}
-          style={styles.cancelButton}
-        >
-          Cancelar
-        </Button>
-      </ScrollView>
-    </View>
+      <TextInput
+        label="Endereço"
+        value={form.endereco}
+        onChangeText={(text) => setForm({...form, endereco: text})}
+        mode="outlined"
+        style={styles.input}
+      />
+
+      <TextInput
+        label="Cidade"
+        value={form.cidade}
+        onChangeText={(text) => setForm({...form, cidade: text})}
+        mode="outlined"
+        style={styles.input}
+      />
+
+      <TextInput
+        label="CEP"
+        value={form.cep}
+        onChangeText={(text) => setForm({...form, cep: text})}
+        mode="outlined"
+        style={styles.input}
+        keyboardType="numeric"
+      />
+
+      <TextInput
+        label="Nome do Responsável *"
+        value={form.nomeResponsavel}
+        onChangeText={(text) => setForm({...form, nomeResponsavel: text})}
+        mode="outlined"
+        style={styles.input}
+      />
+
+      {/* Botão de cadastro */}
+      <Button
+        mode="contained"
+        onPress={handleSubmit}
+        style={styles.button}
+        labelStyle={styles.buttonLabel}
+      >
+        Cadastrar Aluno
+      </Button>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
     backgroundColor: '#000',
-    padding: 16,
-  },
-  scrollContainer: {
-    paddingBottom: 20,
   },
   title: {
     fontSize: 24,
-    color: '#DB9723',
     fontWeight: 'bold',
+    color: '#D99D36',
+    textAlign: 'center',
     marginBottom: 20,
+  },
+  imageContainer: {
+    width: 150,
+    height: 150,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 75,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#D99D36',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 75,
+  },
+  imagePlaceholder: {
+    color: '#D99D36',
     textAlign: 'center',
   },
   input: {
-    marginBottom: 20,
-    backgroundColor: '#fff',
-  },
-  fotoContainer: {
-    marginBottom: 20,
-  },
-  fotoLabel: {
-    color: '#fff',
-    marginBottom: 8,
-  },
-  fotoPreviewContainer: {
-    alignItems: 'center',
     marginBottom: 15,
+    backgroundColor: '#D9D7DB',
+    color: '#D9D7DB',
   },
-  fotoPreview: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    borderWidth: 2,
-    borderColor: '#DB9723',
+  sectionTitle: {
+    color: '#D99D36',
+    marginBottom: 10,
+    marginTop: 5,
   },
-  fotoButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  radioContainer: {
+    marginBottom: 15,
+    backgroundColor: '#D9D7DB',
+    borderRadius: 5,
+    padding: 10,
   },
-  fotoButton: {
-    flex: 1,
-    marginHorizontal: 5,
-    backgroundColor: '#DB9723',
+  button: {
+    marginTop: 20,
+    marginBottom: 30,
+    backgroundColor: '#DBAC2A',
   },
-  submitButton: {
-    marginTop: 10,
-    backgroundColor: '#DB9723',
-    paddingVertical: 5,
-  },
-  cancelButton: {
-    marginTop: 15,
-    borderColor: '#DB9723',
+  buttonLabel: {
+    color: '',
+    fontWeight: 'bold',
   },
 });
