@@ -128,8 +128,7 @@ export default function CadastroScreen() {
         },
       }).then(resp => {
         Alert.alert('Cadastro realizado com sucesso!')
-        router.replace();
-        router.push('/home')
+        router.back();
       }).catch(() => {
         Alert.alert('Erro ao cadastrar aluno')
       })
@@ -141,8 +140,7 @@ export default function CadastroScreen() {
         },
       }).then(resp => {
         Alert.alert('Cadastro realizado com sucesso!')
-        router.replace();
-        router.push('/home')
+        router.back();
       }).catch(() => {
         Alert.alert('Erro ao cadastrar aluno')
       })
