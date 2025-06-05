@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Image,StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import { TextInput, Button, RadioButton, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -8,33 +8,36 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 export default function CadastroScreen() {
-  const [edition,setEdition] = useState(false);
+  const [imageChange, setImageChange] = useState(false)
+  const [edition, setEdition] = useState(false);
   const router = useRouter();
   const localParams = useLocalSearchParams()
   const [image, setImage] = useState<string | null>(null);
   const [form, setForm] = useState({
-    nomeCompleto: '',
-    dataNascimento: '',
+    id: '',
+    nome: '',
+    dt_nasc: '',
     cpf: '',
     rg: '',
     genero: '',
-    contatoResponsavel: '',
+    cont_resp: '',
     endereco: '',
     cidade: '',
     cep: '',
-    nomeResponsavel: ''
+    nome_resp: ''
   });
 
-  useEffect(()=>{
+  useEffect(() => {
     if (localParams.modoEdicao) {
       setEdition(localParams.modoEdicao)
-      api.get(`/aluno/${localParams.alunoId}`).then(resp=>{
-        console.log(resp.data)
-        setForm(resp.data)
+      api.get(`/aluno/${localParams.alunoId}`).then(resp => {
+        const novaData = resp.data.dt_nasc.split('-')
+        setForm({ ...resp.data, dt_nasc: `${novaData[2]}/${novaData[1]}/${novaData[0]}` })
+        setImage(resp.data.foto !== null ? `${api.getUri()}/${resp.data.foto}` : null);
       })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[0])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [0])
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -45,73 +48,107 @@ export default function CadastroScreen() {
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);             
+      setImage(result.assets[0].uri);
+      setImageChange(true)
     }
   };
 
-  const maskCpf = (value: string): string=> {
-  return value
-    .replace(/\D/g, '')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-    .replace(/(-\d{2})\d+?$/, '$1');
-}
+  const maskCpf = (value: string): string => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1');
+  }
 
-const maskPhone = (value: string): string=>{
-  return value
-    .replace(/\D/g, '')
-    .replace(/(\d{2})(\d)/, '($1) $2')
-    .replace(/(\d{5})(\d{1,2})/, '$1-$2')
-    .replace(/(-\d{4})\d+?$/, '$1');
-}
+  const maskPhone = (value: string): string => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{5})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{4})\d+?$/, '$1');
+  }
 
-const maskDate = (value: string): string=> {
-  return value
-    .replace(/\D/g, '')
-    .replace(/(\d{2})(\d)/, '$1/$2')
-    .replace(/(\d{2})(\d)/, '$1/$2')
-    .replace(/(\/\d{4})\d+?$/, '$1');
-}
+  const maskDate = (value: string): string => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{2})(\d)/, '$1/$2')
+      .replace(/(\d{2})(\d)/, '$1/$2')
+      .replace(/(\/\d{4})\d+?$/, '$1');
+  }
 
-  const handleSubmit = async() => {
+  const handleSubmit = async () => {
     const formulario = new FormData()
-    console.log(image)
     // Validação dos campos obrigatórios
-    if (!form.nomeCompleto || !form.dataNascimento || !form.genero || 
-        !form.cidade || !form.cep || !form.nomeResponsavel) {
+    if (!form.nome || !form.dt_nasc || !form.genero ||
+      !form.cidade || !form.cep || !form.nome_resp) {
       alert('Por favor, preencha todos os campos obrigatórios!');
       return;
     }
-    formulario.append('nome', form.nomeCompleto)
-    formulario.append('dt_nasc', form.dataNascimento)
-    formulario.append('genero', form.genero)
-    formulario.append('cidade', form.cidade)
-    formulario.append('cep', form.cep)
-    formulario.append('nome_resp', form.nomeResponsavel)
-    formulario.append('cont_resp', form.contatoResponsavel)
-    formulario.append('rg', form.rg)
-    formulario.append('cpf', form.cpf)
-    formulario.append('professorEmail',`${await AsyncStorage.getItem('email')}`)
-    
+    if (!edition) {
+      const novaData = form.dt_nasc.split('/')
+      formulario.append('nome', form.nome)
+      formulario.append('dt_nasc', `${novaData[2]}-${novaData[1]}-${novaData[0]}`)
+      formulario.append('genero', form.genero)
+      formulario.append('cidade', form.cidade)
+      formulario.append('cep', form.cep)
+      formulario.append('nome_resp', form.nome_resp)
+      formulario.append('cont_resp', form.cont_resp)
+      formulario.append('rg', form.rg)
+      formulario.append('cpf', form.cpf)
+      formulario.append('professorEmail', `${await AsyncStorage.getItem('email')}`)
+    } else {
+      const novaData = form.dt_nasc.split('/')
+      formulario.append('id', form.id)
+      formulario.append('nome', form.nome)
+      formulario.append('dt_nasc', `${novaData[2]}-${novaData[1]}-${novaData[0]}`)
+      formulario.append('genero', form.genero)
+      formulario.append('cidade', form.cidade)
+      formulario.append('cep', form.cep)
+      formulario.append('nome_resp', form.nome_resp)
+      formulario.append('cont_resp', form.cont_resp)
+      formulario.append('rg', form.rg)
+      formulario.append('cpf', form.cpf)
+      formulario.append('professorEmail', `${await AsyncStorage.getItem('email')}`)
+    }
 
-    if (image) formulario.append('foto',{
-      uri:image,
-      type: `image/${image.split('/')[image.split('/').length-1].split('.')[1]}`,
-      name:`${image.split('/')[image.split('/').length-1]}`
-    }as any)
+
+
+    if (image && imageChange) formulario.append('foto', {
+      uri: image,
+      type: `image/${image.split('/')[image.split('/').length - 1].split('.')[1]}`,
+      name: `${image.split('/')[image.split('/').length - 1]}`
+    } as any)
     console.log(formulario)
-
-    api.post('/aluno/', formulario, {
-      headers: {
-            'Content-Type': 'multipart/form-data',
+    if (!edition) {
+      api.post('/aluno/', formulario, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
         },
-    }).then(resp=>{
-      Alert.alert('Cadastro realizado com sucesso!')
-      router.back();
-    }).catch(()=>{
-      Alert.alert('Erro ao cadastrar aluno')
-    })
+      }).then(resp => {
+        Alert.alert('Cadastro realizado com sucesso!')
+        router.replace();
+        router.push('/home')
+      }).catch(() => {
+        Alert.alert('Erro ao cadastrar aluno')
+      })
+
+    } else {
+      api.put('/aluno/', formulario, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }).then(resp => {
+        Alert.alert('Cadastro realizado com sucesso!')
+        router.replace();
+        router.push('/home')
+      }).catch(() => {
+        Alert.alert('Erro ao cadastrar aluno')
+      })
+    }
+
+
 
   };
 
@@ -131,16 +168,16 @@ const maskDate = (value: string): string=> {
       {/* Campos do formulário */}
       <TextInput
         label="Nome Completo"
-        value={form.nomeCompleto}
-        onChangeText={(text) => setForm({...form, nomeCompleto: text})}
+        value={form.nome}
+        onChangeText={(text) => setForm({ ...form, nome: text })}
         mode="outlined"
         style={styles.input}
       />
 
       <TextInput
         label="Data de Nascimento"
-        value={form.dataNascimento}
-        onChangeText={(text) => setForm({...form, dataNascimento: maskDate (text)})}
+        value={form.dt_nasc}
+        onChangeText={(text) => setForm({ ...form, dt_nasc: maskDate(text) })}
         mode="outlined"
         style={styles.input}
         placeholder="DD/MM/AAAA"
@@ -150,7 +187,7 @@ const maskDate = (value: string): string=> {
       <TextInput
         label="CPF"
         value={form.cpf}
-        onChangeText={(text) => setForm({...form, cpf: maskCpf(text)})}
+        onChangeText={(text) => setForm({ ...form, cpf: maskCpf(text) })}
         mode="outlined"
         style={styles.input}
         keyboardType="numeric"
@@ -159,7 +196,7 @@ const maskDate = (value: string): string=> {
       <TextInput
         label="RG"
         value={form.rg}
-        onChangeText={(text) => setForm({...form, rg: text})}
+        onChangeText={(text) => setForm({ ...form, rg: text })}
         mode="outlined"
         style={styles.input}
         keyboardType="numeric"
@@ -168,7 +205,7 @@ const maskDate = (value: string): string=> {
       {/* Gênero */}
       <Text style={styles.sectionTitle}>Gênero</Text>
       <RadioButton.Group
-        onValueChange={(value) => setForm({...form, genero: value})}
+        onValueChange={(value) => setForm({ ...form, genero: value })}
         value={form.genero}
       >
         <View style={styles.radioContainer}>
@@ -180,8 +217,8 @@ const maskDate = (value: string): string=> {
 
       <TextInput
         label="Contato do Responsável"
-        value={form.contatoResponsavel}
-        onChangeText={(text) => setForm({...form, contatoResponsavel: maskPhone (text)})}
+        value={form.cont_resp}
+        onChangeText={(text) => setForm({ ...form, cont_resp: maskPhone(text) })}
         mode="outlined"
         style={styles.input}
         keyboardType="phone-pad"
@@ -190,7 +227,7 @@ const maskDate = (value: string): string=> {
       <TextInput
         label="Endereço"
         value={form.endereco}
-        onChangeText={(text) => setForm({...form, endereco: text})}
+        onChangeText={(text) => setForm({ ...form, endereco: text })}
         mode="outlined"
         style={styles.input}
       />
@@ -198,7 +235,7 @@ const maskDate = (value: string): string=> {
       <TextInput
         label="Cidade"
         value={form.cidade}
-        onChangeText={(text) => setForm({...form, cidade: text})}
+        onChangeText={(text) => setForm({ ...form, cidade: text })}
         mode="outlined"
         style={styles.input}
       />
@@ -206,7 +243,7 @@ const maskDate = (value: string): string=> {
       <TextInput
         label="CEP"
         value={form.cep}
-        onChangeText={(text) => setForm({...form, cep: text})}
+        onChangeText={(text) => setForm({ ...form, cep: text })}
         mode="outlined"
         style={styles.input}
         keyboardType="numeric"
@@ -214,8 +251,8 @@ const maskDate = (value: string): string=> {
 
       <TextInput
         label="Nome do Responsável *"
-        value={form.nomeResponsavel}
-        onChangeText={(text) => setForm({...form, nomeResponsavel: text})}
+        value={form.nome_resp}
+        onChangeText={(text) => setForm({ ...form, nome_resp: text })}
         mode="outlined"
         style={styles.input}
       />

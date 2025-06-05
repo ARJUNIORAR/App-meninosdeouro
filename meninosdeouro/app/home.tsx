@@ -29,7 +29,7 @@ export default function Home() {
     console.error('Erro ao carregar alunos:', error);
   });
 // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [0]); // Removi a dependência [0] que não faz sentido e pode causar problemas segundo o documento.
+}, [2]); // Removi a dependência [0] que não faz sentido e pode causar problemas segundo o documento.
 
   const alunosFiltrados = useMemo(() => {
     return alunos.filter(aluno =>
